@@ -23,12 +23,12 @@
                     <li><a href="{{ url_for('main.explore') }}">Explore</a></li>
                 </ul>
                 {% if g.search_form %}
-                <form class="navbar-form navbar-left" method="get" action="{{ url_for('main.search') }}">
-                    <div class="form-group">
-                        {{ g.search_form.q(size=20, class='form-control',
+                    <form class="navbar-form navbar-left" method="get" action="{{ url_for('main.search') }}">
+                        <div class="form-group">
+                            {{ g.search_form.q(size=20, class='form-control',
                                 placeholder=g.search_form.q.label.text) }}
-                    </div>
-                </form>
+                        </div>
+                    </form>
                 {% endif %}
                 <ul class="nav navbar-nav navbar-right">
                     {% if current_user.is_anonymous %}
@@ -75,5 +75,53 @@
                 $(destElem).text("{{ _('Error: Could not contact server.') }}")
             });
         }
+
+        $(function () {
+            // write start up code here
+            var timer = null;
+            var xhr = null;
+            $('.user_popup').hover(
+                function (event) {
+                    // mouse in event handler
+                    var elem = $(event.currentTarget);
+                    timer = setTimeout(function () {
+                        timer = null;
+                        xhr = $.ajax(
+                            '/user/' + elem.first().text().trim() + '/popup').done(
+                            function (data) {
+                                xhr = null;
+                                // create and display popup here
+                                elem.popover({
+                                    trigger: 'manual',
+                                    html: true,
+                                    animation: false,
+                                    container: elem,
+                                    content: data
+                                }).popover('show');
+                                flask_moment_render_all();
+                            }
+                        )
+                    }, 1000);
+                },
+                function (event) {
+                    // mouse out event handler
+                    var elem = $(event.currentTarget);
+                    // checks if there is an active timer object
+                    // and if there is one, it cancels it
+                    if (timer) {
+                        clearTimeout(timer);
+                        timer = null;
+                    }
+                    else if (xhr) {
+                        xhr.abort();
+                        xhr = null;
+                    }
+                    else {
+                        // destroy popup here
+                        elem.popover('destroy');
+                    }
+                }
+            )
+        });
     </script>
 {% endblock %}
